@@ -1,0 +1,162 @@
+/*
+1 - Afficher les différents taux de location (rental_rate) présents
+dans la table film.
+*/
+
+select rental_rate
+from film
+group by rental_rate;
+
+
+/*
+2 - Je viens d'ajouter à la liste de films présents dans le magasin un
+nouveau film qui pourrait plaire à 'Gloria Cook', pouvez-vous me donner
+son email afin que je lui envoie un message ?
+*/
+
+select email
+from customer
+where first_name = 'Gloria' and last_name = 'Cook';
+
+/*
+3 - Un client est en retard pour rendre son film loué la semaine
+dernière, nous avons noté son adresse qui est '270 Toulon Boulevard',
+pouvez-vous trouver son numéro de téléphone qu'on le prévienne ?
+*/
+
+select phone
+from address
+where address = '270 Toulon Boulevard';
+
+/*
+4 - Compter le nombre d'acteurs dont le nom de famille commence par P ?
+*/
+
+select count(last_name)
+from actor
+where last_name like 'P%';
+
+/*
+5 - Quel est le client qui a le plus grand Customer ID et dont le
+prénom
+commence par 'E'?
+*/
+
+select max(customer_id)
+from customer
+where first_name like 'E%';
+
+/*
+6 - Nous souhaitons donner un bonus à l’équipe qui a obtenu le plus de
+paiements. Combien de paiements a réalisé chaque équipe et pour quel
+montant ?
+*/
+
+select staff.staff_id, count(payment_id) as nbr_payments, sum(amount) as total_gain
+from payment 
+inner join staff on payment.staff_id = staff.staff_id
+group by staff.staff_id;
+
+/*
+7 - Nous voulons distribuer des coupons à nos 5 clients qui ont le
+plus
+d’argent dans notre magasin. Obtenez les IDs de ces 5 personnes ?
+*/
+
+
+select customer.customer_id, sum(amount) as total_paid
+from payment
+inner join customer on payment.customer_id = customer.customer_id
+group by customer.customer_id 
+order by total_paid desc
+limit 5;
+
+/*
+8 - Nous souhaitons distribuer une carte de paiement avantageuse pour
+nos
+meilleurs clients. Sont éligibles à cette carte les clients qui
+totalisent
+au moins 30 transactions de paiement (table payment). Quels clients
+sont
+donc éligibles ? (fournir leurs IDs)
+*/
+
+select customer.customer_id, count(payment_id) as total_tx
+from payment
+inner join customer on payment.customer_id = customer.customer_id
+group by customer.customer_id
+having count(payment_id) >= 30
+order by total_tx desc;
+
+/*
+9 - Obtenir les notations dont la durée de location moyenne est
+strictement
+supérieur à 5 jours.
+*/
+
+select avg(return_date - rental_date), rental_rate
+from rental
+inner join inventory on rental.Inventory_id = inventory.inventory_id
+inner join film on inventory.film_id = film.film_id
+group by rental_rate
+having avg(return_date - rental_date) > interval '5' day
+order by rental_rate desc;
+
+/*
+10 - Quel est le film qui a rapporté le plus et combien a-t-il rapporté
+?
+*/
+
+select film_id, sum(amount) from payment
+inner join rental on payment.rental_id = rental.rental_id
+inner join inventory on rental.Inventory_id = inventory.inventory_id
+group by film_id
+order by sum(amount) desc
+limit 1;
+
+/*
+BONUS 11 - Quel magasin a vendu le plus ?
+*/
+
+/* vendu le plus en prix ou en nbre de paiements ?*/
+select staff.store_id, count(payment_id) as nbr_payments
+from payment 
+inner join staff on payment.staff_id = staff.staff_id
+group by staff.store_id
+order by nbr_payments desc 
+limit 1;
+
+/*
+BONUS 12 - Les titres de films qui n'ont pas été répertorié ?
+*/
+
+select title
+from film
+left join inventory on inventory.film_id = film.film_id
+where inventory.film_id is null;
+
+/*
+BONUS 12 – Combien y-a-t-il de locations pour les films d’action,
+comédie et d’animations ?
+*/
+
+select count(rental_id)
+from rental
+inner join inventory on rental.Inventory_id = inventory.Inventory_id
+inner join film on inventory.film_id = film.film_id
+inner join film_category on film.film_id = film_category.film_id
+inner join category on film_category.category_id = category.category_id
+where name = 'Action' or name = 'Comedy' or name='Animation';
+
+/*
+BONUS 13 – Les emails des clients qui ont loué plus de 40 films ?
+*/
+
+select email, count(rental_id) as nbr_movies_rent
+from rental 
+inner join customer on rental.customer_id = customer.customer_id
+group by customer.customer_id
+having count(rental_id) > 40
+order by nbr_movies_rent desc
+
+
